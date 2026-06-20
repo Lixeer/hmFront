@@ -1,0 +1,303 @@
+/* 全局像素风增强样式 */
+
+/* 基础字体设置 - 使用 rem 单位适配不同尺寸 */
+html {
+  font-size: 14px;
+}
+
+body {
+  font-family: 'Press Start 2P', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* 响应式字体缩放 */
+@media screen and (max-width: 768px) {
+  html {
+    font-size: 12px;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  html {
+    font-size: 10px;
+  }
+}
+
+/* 所有按钮触摸反馈 */
+.nes-btn,
+button {
+  cursor: pointer;
+  transition: transform 0.1s, box-shadow 0.1s;
+  touch-action: manipulation;
+}
+
+.nes-btn:active,
+button:active {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0px #000 !important;
+}
+
+/* 卡片点击区域扩展 */
+.nes-container.with-title {
+  cursor: pointer;
+  user-select: none;
+  touch-action: manipulation;
+}
+
+.nes-container.with-title:active {
+  transform: translate(2px, 2px);
+  box-shadow: 4px 4px 0px #000 !important;
+}
+
+/* 调整 nes-container 内边距以适应小屏幕 */
+.nes-container {
+  padding: 1rem;
+}
+
+@media screen and (max-width: 768px) {
+  .nes-container {
+    padding: 0.75rem;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .nes-container {
+    padding: 0.5rem;
+  }
+}
+
+/* 状态徽章样式 */
+.status-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 0.25rem;
+  font-weight: bold;
+  font-size: 0.875rem;
+  border: 2px solid #000;
+  box-shadow: 2px 2px 0px #000;
+  transition: all 0.1s;
+}
+
+.status-badge.status-normal {
+  background: #92cc41;
+  color: #fff;
+  border-color: #76c442;
+}
+
+.status-badge.status-abnormal {
+  background: #e76e55;
+  color: #fff;
+  border-color: #ce372b;
+  animation: abnormal-blink 2s infinite;
+}
+
+/* 异常状态闪烁动画 - 性能优化版本 */
+@keyframes abnormal-blink {
+  0%, 45%, 100% {
+    opacity: 1;
+    box-shadow: 2px 2px 0px #000;
+  }
+  50%, 95% {
+    opacity: 0.6;
+    box-shadow: 1px 1px 0px #000;
+  }
+}
+
+/* 响应式网格布局优化 */
+@media screen and (max-width: 768px) {
+  .cards-container {
+    grid-template-columns: 1fr !important;
+    gap: 1rem !important;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .cards-container {
+    gap: 0.75rem !important;
+  }
+}
+
+/* 像素风标题增强 */
+.title {
+  text-shadow: 3px 3px 0px #000;
+  letter-spacing: 0.05em;
+}
+
+@media screen and (max-width: 768px) {
+  .title {
+    font-size: 1.5rem !important;
+    padding: 1rem !important;
+    text-shadow: 2px 2px 0px #000;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .title {
+    font-size: 1.25rem !important;
+    padding: 0.75rem !important;
+  }
+}
+
+/* 按钮响应式调整 */
+.nes-btn {
+  font-size: 0.875rem;
+  padding: 0.5rem 1rem;
+}
+
+@media screen and (max-width: 768px) {
+  .nes-btn {
+    font-size: 0.75rem;
+    padding: 0.5rem 0.75rem;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .nes-btn {
+    font-size: 0.625rem;
+    padding: 0.375rem 0.5rem;
+  }
+}
+
+/* 下拉选择框响应式 */
+.nes-select {
+  font-size: 0.875rem;
+  padding: 0.5rem;
+}
+
+@media screen and (max-width: 768px) {
+  .nes-select {
+    font-size: 0.75rem;
+    padding: 0.375rem;
+  }
+}
+
+/* 信息行响应式 */
+.info-row {
+  flex-wrap: wrap;
+}
+
+@media screen and (max-width: 480px) {
+  .info-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+  }
+
+  .label {
+    min-width: auto;
+    font-size: 0.75rem;
+  }
+
+  .value {
+    font-size: 0.75rem;
+  }
+}
+
+/* 异常等级星星响应式 */
+.severity-stars {
+  gap: 0.25rem;
+}
+
+.star {
+  font-size: 1rem;
+}
+
+@media screen and (max-width: 768px) {
+  .star {
+    font-size: 0.875rem;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .star {
+    font-size: 0.75rem;
+  }
+}
+
+/* 日志项响应式 */
+.log-item {
+  padding: 0.75rem;
+}
+
+@media screen and (max-width: 768px) {
+  .log-item {
+    padding: 0.5rem;
+  }
+
+  .log-description {
+    font-size: 0.75rem;
+  }
+
+  .log-time {
+    font-size: 0.625rem;
+  }
+}
+
+/* 加载动画优化 */
+.loading-text {
+  animation: loading-blink 1.5s infinite;
+}
+
+@keyframes loading-blink {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+/* 触摸设备优化 */
+@media (hover: none) and (pointer: coarse) {
+  .nes-btn:hover,
+  .nes-container.with-title:hover {
+    transform: none;
+    box-shadow: inherit;
+  }
+
+  .nes-btn:active,
+  .nes-container.with-title:active {
+    transform: translate(2px, 2px);
+    box-shadow: 2px 2px 0px #000 !important;
+  }
+}
+
+/* 防止文本选择 */
+.no-select {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+
+/* 滚动条像素风定制 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f5f5f5;
+  border: 2px solid #000;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #209cee;
+  border: 2px solid #000;
+  box-shadow: 2px 2px 0px #000;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #1a7ad4;
+}
+
+/* 全局过渡动画 */
+* {
+  transition-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* 禁用默认的点击高亮 */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
