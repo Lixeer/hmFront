@@ -53,7 +53,7 @@
               <div class="info-header">
                 <span class="patient-name">{{ item.patient.name }}</span>
                 <span class="nes-badge is-splited room-badge">
-                  <span class="is-dark">房</span>
+                  <span class="is-dark">病房号</span>
                   <span class="is-success">{{ item.patient.roomNumber }}</span>
                 </span>
               </div>
@@ -101,6 +101,7 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
+import WebSocketService from '../utils/websocket'
 
 export default {
   name: 'PatientList',
@@ -108,9 +109,10 @@ export default {
     const router = useRouter()
     const patients = ref([])
     const loading = ref(false)
-    let websocket = null
-    let reconnectTimer = null
-    const reconnectDelay = 5000
+    const webSocketService = WebSocketService.getInstance()
+    
+    // 生成唯一回调ID
+    const callbackId = 'patient-list-' + Date.now()
 
     const fetchPatients = async () => {
       loading.value = true
@@ -122,68 +124,6 @@ export default {
         patients.value = []
       } finally {
         loading.value = false
-      }
-    }
-
-    const connectWebSocket = () => {
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-      const host = window.location.host
-      const wsUrl = `${protocol}//${host}/ws/monitor`
-
-      try {
-        websocket = new WebSocket(wsUrl)
-
-        websocket.onopen = () => {
-          console.log('WebSocket 连接已建立')
-          if (reconnectTimer) {
-            clearTimeout(reconnectTimer)
-            reconnectTimer = null
-          }
-        }
-
-        websocket.onmessage = (event) => {
-          try {
-            const data = JSON.parse(event.data)
-            // 后端广播的是完整的异常病人列表 [{patient, logs}, ...]
-            if (Array.isArray(data)) {
-              patients.value = data
-              console.log('WebSocket 更新异常病人列表，共', data.length, '人')
-            }
-          } catch (error) {
-            console.error('解析 WebSocket 消息失败:', error)
-          }
-        }
-
-        websocket.onerror = (error) => {
-          console.error('WebSocket 错误:', error)
-        }
-
-        websocket.onclose = () => {
-          console.log('WebSocket 连接已断开，5秒后尝试重连...')
-          websocket = null
-
-          if (!reconnectTimer) {
-            reconnectTimer = setTimeout(() => {
-              console.log('尝试重新连接 WebSocket...')
-              connectWebSocket()
-            }, reconnectDelay)
-          }
-        }
-      } catch (error) {
-        console.error('创建 WebSocket 连接失败:', error)
-      }
-    }
-
-    const disconnectWebSocket = () => {
-      if (reconnectTimer) {
-        clearTimeout(reconnectTimer)
-        reconnectTimer = null
-      }
-
-      if (websocket) {
-        websocket.close()
-        websocket = null
-        console.log('WebSocket 连接已主动断开')
       }
     }
 
@@ -209,13 +149,47 @@ export default {
       return 'is-success'
     }
 
+    // WebSocket 消息处理回调
+    const handleMessage = (data) => {
+      if (Array.isArray(data)) {
+        patients.value = data
+        console.log('WebSocket 更新异常病人列表，共', data.length, '人')
+      }
+    }
+
+    const handleOpen = () => {
+      console.log('PatientList WebSocket 连接已建立')
+    }
+
+    const handleClose = (event) => {
+      console.log('PatientList WebSocket 连接已断开:', event.code, event.reason)
+    }
+
+    const handleError = (error) => {
+      console.error('PatientList WebSocket 错误:', error)
+    }
+
     onMounted(() => {
       fetchPatients()
-      connectWebSocket()
+      
+      // 注册 WebSocket 回调
+      webSocketService.subscribe({
+        id: callbackId,
+        onMessage: handleMessage,
+        onOpen: handleOpen,
+        onClose: handleClose,
+        onError: handleError
+      })
+      
+      // 如果还没有连接，触发连接
+      if (!webSocketService.isConnected()) {
+        webSocketService.connect()
+      }
     })
 
     onUnmounted(() => {
-      disconnectWebSocket()
+      // 取消注册回调
+      webSocketService.unsubscribe(callbackId)
     })
 
     return {
@@ -231,6 +205,8 @@ export default {
 </script>
 
 <style scoped>
+/* PatientList 页面样式 - 统一使用全局像素字体 */
+
 /* 页面最外层 */
 .patient-list-wrapper {
   max-width: 1200px;
@@ -243,12 +219,6 @@ export default {
   padding: 1.5rem;
 }
 
-.main-container > .title {
-  font-size: 1.5rem;
-  color: #209cee;
-  text-shadow: 3px 3px 0px #000;
-}
-
 /* 工具栏 */
 .toolbar {
   display: flex;
@@ -259,11 +229,6 @@ export default {
   border-bottom: 4px solid #000;
 }
 
-.patient-count {
-  font-size: 1rem;
-  font-weight: bold;
-}
-
 /* 加载状态 */
 .loading-section {
   text-align: center;
@@ -272,7 +237,6 @@ export default {
 
 .loading-text {
   animation: blink 1.5s infinite;
-  font-size: 1rem;
 }
 
 @keyframes blink {
@@ -290,10 +254,6 @@ export default {
   padding: 1.5rem;
 }
 
-.empty-container .nes-balloon {
-  font-size: 1.2rem;
-}
-
 /* 病人列表 */
 .patient-list {
   display: flex;
@@ -308,12 +268,55 @@ export default {
 }
 
 .patient-list > .nes-container.is-dark {
-  background: #212932;
+  background: #e30808;
   color: #fff;
 }
 
+/* 深色背景下的文本颜色优化 */
 .patient-list > .nes-container.is-dark .nes-text.is-disabled {
-  color: #787878;
+  color: #b0b0b0; /* 提高灰色文本的亮度，确保可读性 */
+}
+
+/* 深色背景下的气泡样式优化 */
+.patient-list > .nes-container.is-dark .nes-balloon {
+  background: #fff;
+  color: #000;
+  border-color: #fff;
+  box-shadow: 4px 4px 0px #000;
+}
+
+/* 深色背景下的气泡文本样式 */
+.patient-list > .nes-container.is-dark .log-type {
+  color: #333;
+  font-weight: bold;
+}
+
+.patient-list > .nes-container.is-dark .log-desc {
+  color: #333;
+}
+
+.patient-list > .nes-container.is-dark .log-time {
+  color: #666;
+}
+
+/* 深色背景下的徽章样式优化 */
+.patient-list > .nes-container.is-dark .nes-badge {
+  box-shadow: 2px 2px 0px #fff;
+}
+
+/* 深色背景下的星星样式优化 */
+.patient-list > .nes-container.is-dark .star {
+  color: #666;
+}
+
+.patient-list > .nes-container.is-dark .star.active {
+  color: #f7d51d;
+  text-shadow: 2px 2px 0px #000;
+}
+
+/* 深色背景下的进度条样式优化 */
+.patient-list > .nes-container.is-dark .nes-progress {
+  box-shadow: 2px 2px 0px #fff;
 }
 
 .patient-list > .nes-container.is-clickable {
@@ -345,12 +348,6 @@ export default {
   flex-wrap: wrap;
 }
 
-.patient-name {
-  font-size: 1.2rem;
-  font-weight: bold;
-  color: inherit;
-}
-
 .room-badge {
   font-size: 0.75rem;
 }
@@ -367,7 +364,6 @@ export default {
 }
 
 .star {
-  font-size: 1rem;
   color: #ccc;
 }
 
@@ -382,10 +378,6 @@ export default {
   max-width: 200px;
 }
 
-.patient-meta {
-  font-size: 0.875rem;
-}
-
 /* 右侧：异常描述 */
 .patient-log {
   flex: 1;
@@ -398,24 +390,6 @@ export default {
   max-width: 100%;
 }
 
-.log-type {
-  font-weight: bold;
-  font-size: 0.875rem;
-  margin-bottom: 0.25rem;
-  color: inherit;
-}
-
-.log-desc {
-  font-size: 0.875rem;
-  margin-bottom: 0.25rem;
-  color: inherit;
-}
-
-.log-time {
-  font-size: 0.75rem;
-  margin-bottom: 0;
-}
-
 /* 响应式：小屏幕上下堆叠 */
 @media screen and (max-width: 600px) {
   .patient-list-wrapper {
@@ -426,18 +400,10 @@ export default {
     padding: 1rem;
   }
 
-  .main-container > .title {
-    font-size: 1.25rem;
-  }
-
   .toolbar {
     flex-direction: column;
     align-items: flex-start;
     gap: 0.75rem;
-  }
-
-  .patient-count {
-    font-size: 0.875rem;
   }
 
   .patient-row {

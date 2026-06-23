@@ -59,7 +59,7 @@
                   <td class="label-cell">当前状态</td>
                   <td>
                     <span class="nes-badge" :class="patient.status === 'normal' ? 'is-success' : 'is-error'">
-                      <span class="is-dark">状态</span>
+                      
                       <span :class="patient.status === 'normal' ? 'is-success' : 'is-error'">
                         {{ patient.status === 'normal' ? '正常' : '异常' }}
                       </span>
@@ -168,9 +168,10 @@
 </template>
 
 <script>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import axios from 'axios'
+import WebSocketService from '../utils/websocket'
 
 export default {
   name: 'PatientDetail',
@@ -186,6 +187,10 @@ export default {
     const messageText = ref('')
     const messageType = ref('success')
     let messageTimer = null
+    const webSocketService = WebSocketService.getInstance()
+    
+    // 生成唯一回调ID
+    const callbackId = 'patient-detail-' + route.params.id + '-' + Date.now()
 
     const fetchPatient = async () => {
       loading.value = true
@@ -251,12 +256,17 @@ export default {
         await axios.put(`/api/patients/${patientId}/severity`, {
           severity: selectedSeverity.value
         })
-        patient.value.severity = selectedSeverity.value
+        // 本地更新
+        if (patient.value) {
+          patient.value.severity = selectedSeverity.value
+        }
         displayMessage('✅ 等级已更新', 'success')
       } catch (err) {
         console.error('更新等级失败:', err)
         displayMessage('❌ 更新失败', 'error')
-        selectedSeverity.value = patient.value.severity || 0
+        if (patient.value) {
+          selectedSeverity.value = patient.value.severity || 0
+        }
       } finally {
         updatingSeverity.value = false
       }
@@ -280,8 +290,57 @@ export default {
       return 'is-success'
     }
 
+    // WebSocket 消息处理回调
+    const handleMessage = (data) => {
+      if (Array.isArray(data)) {
+        const patientId = parseInt(route.params.id)
+        // 查找当前病人的数据
+        const updatedPatient = data.find(item => item.patient && item.patient.id === patientId)
+        if (updatedPatient && patient.value) {
+          // 更新病人数据
+          patient.value = {
+            ...updatedPatient.patient,
+            logs: updatedPatient.logs || patient.value.logs
+          }
+          selectedSeverity.value = patient.value.severity || 0
+          console.log(`病人 ${patient.value.name} 数据已更新`)
+        }
+      }
+    }
+
+    const handleOpen = () => {
+      console.log('PatientDetail WebSocket 连接已建立')
+    }
+
+    const handleClose = (event) => {
+      console.log('PatientDetail WebSocket 连接已断开:', event.code, event.reason)
+    }
+
+    const handleError = (error) => {
+      console.error('PatientDetail WebSocket 错误:', error)
+    }
+
     onMounted(() => {
       fetchPatient()
+      
+      // 注册 WebSocket 回调
+      webSocketService.subscribe({
+        id: callbackId,
+        onMessage: handleMessage,
+        onOpen: handleOpen,
+        onClose: handleClose,
+        onError: handleError
+      })
+      
+      // 如果还没有连接，触发连接
+      if (!webSocketService.isConnected()) {
+        webSocketService.connect()
+      }
+    })
+
+    onUnmounted(() => {
+      // 取消注册回调
+      webSocketService.unsubscribe(callbackId)
     })
 
     return {
@@ -304,6 +363,8 @@ export default {
 </script>
 
 <style scoped>
+/* PatientDetail 页面样式 - 统一使用全局像素字体 */
+
 /* 页面最外层 */
 .patient-detail-wrapper {
   max-width: 600px;
@@ -316,21 +377,11 @@ export default {
   padding: 1.5rem;
 }
 
-.main-container > .title {
-  font-size: 1.5rem;
-  color: #209cee;
-  text-shadow: 3px 3px 0px #000;
-}
-
 /* 顶部导航栏 */
 .header-bar {
   margin-bottom: 1rem;
   padding-bottom: 1rem;
   border-bottom: 4px solid #000;
-}
-
-.header-bar .nes-btn {
-  font-size: 0.875rem;
 }
 
 /* 加载状态 */
@@ -348,7 +399,6 @@ export default {
 
 .loading-text {
   animation: blink 1.5s infinite;
-  font-size: 1rem;
 }
 
 @keyframes blink {
@@ -375,11 +425,6 @@ export default {
   padding: 1.5rem;
 }
 
-.error-message {
-  font-size: 1rem;
-  margin-bottom: 1rem;
-}
-
 /* 详情内容 */
 .detail-content {
   display: flex;
@@ -391,11 +436,6 @@ export default {
   margin: 0;
 }
 
-.detail-content .nes-container > .title {
-  font-size: 1rem;
-  color: #209cee;
-}
-
 /* 基本信息区块 */
 .info-table {
   width: 100%;
@@ -404,7 +444,6 @@ export default {
 
 .info-table td {
   padding: 0.5rem;
-  font-size: 0.875rem;
 }
 
 .label-cell {
@@ -423,29 +462,18 @@ export default {
   border: 2px solid #000;
 }
 
-.severity-label {
-  font-weight: bold;
-  font-size: 0.875rem;
-}
-
 .severity-stars {
   display: flex;
   gap: 0.125rem;
 }
 
 .star {
-  font-size: 1rem;
   color: #ccc;
 }
 
 .star.active {
   color: #f7d51d;
   text-shadow: 2px 2px 0px #000;
-}
-
-.severity-text {
-  font-weight: bold;
-  font-size: 0.875rem;
 }
 
 .severity-row .nes-progress {
@@ -462,10 +490,6 @@ export default {
   padding: 0.5rem;
 }
 
-.logs-list {
-  font-size: 0.875rem;
-}
-
 .logs-list li {
   padding: 0.5rem 0;
   border-bottom: 2px dashed #ccc;
@@ -475,19 +499,9 @@ export default {
   border-bottom: none;
 }
 
-.log-type {
-  color: #333;
-  margin: 0 0.25rem;
-}
-
-.log-desc {
-  color: #666;
-}
-
 .log-time {
   display: block;
   margin-top: 0.25rem;
-  font-size: 0.75rem;
 }
 
 .empty-logs .nes-container {
@@ -502,11 +516,6 @@ export default {
   flex-wrap: wrap;
 }
 
-.action-btn {
-  font-size: 1rem;
-  padding: 0.75rem 1.5rem;
-}
-
 .severity-control {
   display: flex;
   align-items: center;
@@ -517,18 +526,12 @@ export default {
   min-width: 100px;
 }
 
-.severity-control select {
-  font-size: 0.875rem;
-  padding: 0.5rem;
-}
-
 /* 提示消息 */
 .message-section {
   margin-top: 1rem;
 }
 
 .message-section .nes-balloon {
-  font-size: 0.875rem;
   padding: 0.75rem 1rem;
   display: inline-block;
 }
@@ -551,10 +554,6 @@ export default {
 
   .main-container {
     padding: 1rem;
-  }
-
-  .main-container > .title {
-    font-size: 1.25rem;
   }
 
   .actions-row {

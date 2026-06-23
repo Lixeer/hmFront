@@ -16,7 +16,15 @@ export default defineConfig({
       '/ws': {
         target: 'ws://localhost:8080',
         ws: true,
-        changeOrigin: true
+        changeOrigin: true,
+        // 添加 WebSocket 升级请求头处理
+        headers: {
+          'Upgrade': 'websocket',
+          'Connection': 'Upgrade'
+        },
+        // 禁用代理请求头，避免干扰 WebSocket 握手
+        proxyTimeout: 60000,
+        timeout: 60000
       }
     }
   }

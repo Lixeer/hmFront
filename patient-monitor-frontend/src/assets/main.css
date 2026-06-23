@@ -1,14 +1,14 @@
 /* 全局像素风增强样式 */
 
-/* 基础字体设置 - 使用 rem 单位适配不同尺寸 */
+/* 基础设置 */
 html {
   font-size: 14px;
 }
 
 body {
-  font-family: 'Press Start 2P', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  -webkit-font-smoothing: antialiased;
+  -webkit-font-smoothing: none; /* 禁用字体平滑，保持像素感 */
   -moz-osx-font-smoothing: grayscale;
+  line-height: 1.8;
 }
 
 /* 响应式字体缩放 */
@@ -119,16 +119,13 @@ button:active {
 }
 
 /* 像素风标题增强 */
-.title {
-  text-shadow: 3px 3px 0px #000;
-  letter-spacing: 0.05em;
-}
+
 
 @media screen and (max-width: 768px) {
   .title {
     font-size: 1.5rem !important;
     padding: 1rem !important;
-    text-shadow: 2px 2px 0px #000;
+    
   }
 }
 
