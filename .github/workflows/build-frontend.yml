@@ -6,11 +6,11 @@ on:
       tag_name:
         description: 'Release Tag (e.g., v1.4.0)'
         required: true
-        default: 'v1.4.0'
+        default: 'v1.0.1'
       release_title:
         description: 'Release Title'
         required: true
-        default: 'Patient Monitor Frontend - Release v1.4.0'
+        default: 'Patient Monitor Frontend - Release v1.0.1'
 
 permissions:
   contents: write
@@ -26,7 +26,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 22
           cache: 'npm'
           cache-dependency-path: patient-monitor-frontend/package-lock.json
 
