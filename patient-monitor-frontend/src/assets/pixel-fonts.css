@@ -3,12 +3,21 @@
 /* 引入像素风格中文字体和英文字体 */
 @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=ZCOOL+KuaiLe&family=Ma+Shan+Zheng&display=swap');
 
+/* 引入本地融合像素体 (Fusion Pixel) */
+@font-face {
+  font-family: 'Fusion Pixel';
+  src: url('./fusion-pixel-12px-monospaced-zh_hant.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 /* 字体变量定义 */
 :root {
   /* 英文像素字体 */
   --font-pixel-en: 'Press Start 2P', monospace;
   /* 中文像素字体 */
-  --font-pixel-zh: 'ZCOOL KuaiLe', cursive;
+  --font-pixel-zh: 'Fusion Pixel', 'ZCOOL KuaiLe', cursive;
   /* 中文像素字体备选 */
   --font-pixel-zh-alt: 'Ma Shan Zheng', cursive;
 }
