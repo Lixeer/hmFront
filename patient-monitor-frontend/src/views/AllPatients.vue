@@ -39,8 +39,8 @@
         </div>
       </div>
 
-      <!-- 病人网格列表 -->
-      <div v-else class="patient-grid">
+      <!-- 所有病人列表 -->
+      <div v-else class="patient-list-container">
         <div
           v-for="item in patients"
           :key="item.id"
@@ -51,54 +51,53 @@
           }"
           @click="navigateToDetail(item.id)"
         >
-          <!-- 卡片头部信息 -->
-          <div class="card-header">
-            <span class="patient-name">{{ item.name }}</span>
-            <span class="nes-badge is-splited room-badge">
-              <span class="is-dark">房号</span>
-              <span :class="item.status === 'abnormal' ? 'is-error' : 'is-success'">
-                {{ item.roomNumber }}
-              </span>
-            </span>
-          </div>
-
-          <!-- 卡片主要基本资料 -->
-          <div class="card-body">
-            <div class="meta-info">
-              <span class="nes-text is-disabled">{{ item.age }}岁 · {{ item.gender }}</span>
-              <span 
-                class="nes-badge status-indicator" 
-                :class="item.status === 'abnormal' ? 'is-error' : 'is-success'"
-              >
-                <span>{{ item.status === 'abnormal' ? '异常' : '正常' }}</span>
-              </span>
-            </div>
-
-            <!-- 星星展示危及程度 -->
-            <div class="severity-section" v-if="item.status === 'abnormal'">
-              <div class="severity-stars">
-                <span
-                  v-for="n in 5"
-                  :key="n"
-                  class="star"
-                  :class="{ active: n <= item.severity }"
-                >★</span>
+          <div class="card-horizontal-layout">
+            <!-- 左侧：病人基本信息 -->
+            <div class="card-left-info">
+              <div class="card-header-info">
+                <span class="patient-name">{{ item.name }}</span>
+                <span class="nes-badge is-splited room-badge">
+                  <span class="is-dark">房号</span>
+                  <span :class="item.status === 'abnormal' ? 'is-error' : 'is-success'">
+                    {{ item.roomNumber }}
+                  </span>
+                </span>
+              </div>
+              <div class="card-meta-info">
+                <span class="nes-text is-disabled">{{ item.age }}岁 · {{ item.gender }}</span>
+                <span 
+                  class="nes-badge status-indicator" 
+                  :class="item.status === 'abnormal' ? 'is-error' : 'is-success'"
+                >
+                  <span>{{ item.status === 'abnormal' ? '异常' : '正常' }}</span>
+                </span>
+              </div>
+              <!-- 星星展示危及程度 -->
+              <div class="severity-section" v-if="item.status === 'abnormal'">
+                <div class="severity-stars">
+                  <span
+                    v-for="n in 5"
+                    :key="n"
+                    class="star"
+                    :class="{ active: n <= item.severity }"
+                  >★</span>
+                </div>
               </div>
             </div>
-          </div>
 
-          <!-- 核心部分：实时变化的状态栏 -->
-          <div class="status-bar-wrapper">
-            <div
-              class="status-bar"
-              :style="{
-                backgroundColor: getColorForBehavior(item.activeBehavior),
-                color: getContrastColor(item.activeBehavior)
-              }"
-            >
-              <span class="status-bar-text">
-                {{ item.activeBehavior ? `🚨 动作: ${item.activeBehavior}` : '💚 状态: 正常无动作' }}
-              </span>
+            <!-- 右侧：实时变化的状态栏（大号预览框） -->
+            <div class="card-right-preview">
+              <div
+                class="status-bar-preview"
+                :style="{
+                  backgroundColor: getColorForBehavior(item.activeBehavior),
+                  color: getContrastColor(item.activeBehavior)
+                }"
+              >
+                <span class="status-bar-text">
+                  {{ item.activeBehavior ? `🚨 动作推送: ${item.activeBehavior}` : '💚 状态: 正常无动作' }}
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -380,19 +379,16 @@ export default {
   padding: 1.5rem;
 }
 
-/* 病人网格布局 */
-.patient-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+/* 病人列表容器 */
+.patient-list-container {
+  display: flex;
+  flex-direction: column;
   gap: 1.5rem;
 }
 
 /* 卡片样式 */
 .patient-card {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  padding: 1rem;
+  padding: 1.25rem;
   margin-bottom: 0;
   transition: transform 0.1s, box-shadow 0.1s;
   border: 4px solid #000;
@@ -411,42 +407,47 @@ export default {
   border-color: #e76e55 !important;
 }
 
-/* 卡片头部 */
-.card-header {
+/* 卡片水平布局 */
+.card-horizontal-layout {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 0.75rem;
-  border-bottom: 2px dashed #ccc;
-  padding-bottom: 0.5rem;
+  justify-content: space-between;
+  gap: 2rem;
+  width: 100%;
+}
+
+/* 左侧信息 */
+.card-left-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 250px;
+}
+
+.card-header-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
 }
 
 .patient-name {
-  font-size: 1.15rem;
+  font-size: 1.25rem;
   font-weight: bold;
 }
 
 .room-badge {
-  font-size: 0.7rem;
+  font-size: 0.75rem;
 }
 
-/* 卡片身体 */
-.card-body {
-  flex-grow: 1;
+.card-meta-info {
   display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-}
-
-.meta-info {
-  display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 1rem;
 }
 
 .status-indicator {
-  font-size: 0.65rem;
+  font-size: 0.7rem;
 }
 
 /* 严重程度 */
@@ -456,12 +457,12 @@ export default {
 
 .severity-stars {
   display: flex;
-  gap: 0.15rem;
+  gap: 0.2rem;
 }
 
 .star {
   color: #ccc;
-  font-size: 1.1rem;
+  font-size: 1.2rem;
 }
 
 .star.active {
@@ -469,30 +470,36 @@ export default {
   text-shadow: 1.5px 1.5px 0px #000;
 }
 
-/* 核心：实时状态栏 */
-.status-bar-wrapper {
-  margin-top: auto;
+/* 右侧实时预览大框 */
+.card-right-preview {
+  flex: 1.2;
+  min-width: 280px;
+  display: flex;
+  align-items: center;
 }
 
-.status-bar {
-  border: 2px solid #000;
-  padding: 0.5rem;
+.status-bar-preview {
+  width: 100%;
+  border: 4px solid #000;
+  padding: 1.25rem 1.5rem;
   text-align: center;
-  box-shadow: 2px 2px 0px #000;
+  box-shadow: 4px 4px 0px #000;
   transition: background-color 0.3s ease, color 0.3s ease;
-  min-height: 2.2rem;
+  min-height: 4.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
+  word-break: break-all;
 }
 
 .status-bar-text {
-  font-size: 0.8rem;
+  font-size: 1.05rem;
   font-weight: bold;
+  letter-spacing: 0.05em;
 }
 
-/* 移动端适配 */
-@media screen and (max-width: 600px) {
+/* 移动端与小屏适配 */
+@media screen and (max-width: 768px) {
   .patient-list-wrapper {
     padding: 8px;
   }
@@ -507,9 +514,23 @@ export default {
     gap: 0.75rem;
   }
 
-  .patient-grid {
-    grid-template-columns: 1fr;
+  .card-horizontal-layout {
+    flex-direction: column;
+    align-items: stretch;
     gap: 1rem;
+  }
+
+  .card-left-info {
+    min-width: 100%;
+  }
+
+  .card-right-preview {
+    min-width: 100%;
+  }
+
+  .status-bar-preview {
+    padding: 1rem;
+    min-height: 3.5rem;
   }
 }
 </style>
