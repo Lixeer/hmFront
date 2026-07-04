@@ -6,6 +6,10 @@
 
       <!-- 顶部工具栏 -->
       <div class="toolbar">
+        <div class="nav-links">
+          <router-link to="/" class="nes-btn is-success">⚠️ 异常监测</router-link>
+          <router-link to="/all" class="nes-btn">👥 所有病人</router-link>
+        </div>
         <button
           type="button"
           class="nes-btn is-primary"
@@ -227,6 +231,12 @@ export default {
   margin-bottom: 1.5rem;
   padding-bottom: 1rem;
   border-bottom: 4px solid #000;
+  flex-wrap: wrap;
+}
+
+.nav-links {
+  display: flex;
+  gap: 0.5rem;
 }
 
 /* 加载状态 */
