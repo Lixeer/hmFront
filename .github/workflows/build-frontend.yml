@@ -1,0 +1,75 @@
+name: Build and Release Frontend
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Release Tag (e.g., v1.4.0)'
+        required: true
+        default: 'v1.4.0'
+      release_title:
+        description: 'Release Title'
+        required: true
+        default: 'Patient Monitor Frontend - Release v1.4.0'
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: 'npm'
+          cache-dependency-path: patient-monitor-frontend/package-lock.json
+
+      - name: Install Dependencies
+        working-directory: patient-monitor-frontend
+        run: npm ci
+
+      - name: Build Project
+        working-directory: patient-monitor-frontend
+        run: npm run build
+
+      - name: Create Release Archive
+        run: |
+          cd patient-monitor-frontend/dist
+          zip -r ../../patient-monitor-frontend.zip .
+          cd ../..
+
+      - name: Create Release Notes Template
+        run: |
+          cat << 'EOF' > release-notes.md
+          # Patient Monitor Frontend - ${{ github.event.inputs.tag_name }}
+
+          This release contains the compiled static assets of the **Patient Monitor Frontend**, ready for production deployment.
+
+          ## 🎨 Design & Features
+          * **Retro 8-bit Aesthetics**: Custom pixel UI powered by [nes.css](https://nostalgic-css.github.io/NES.css/) and local **Fusion Pixel (融合像素体)** font.
+          * **Real-time Status Monitoring**: Dynamic CJK patient monitoring with WebSocket color-changing status bars.
+          * **Transaction-Lag Immunity**: Optimized 100ms debounced auto-sync with the database.
+
+          ## 🐳 Docker Deployment Guide (Docker-Friendly)
+          This build artifact `patient-monitor-frontend.zip` is designed to be hosted in any web server (like Nginx). 
+          To run this in Docker alongside the Java backend (non-separated):
+          1. Extract the contents of `patient-monitor-frontend.zip` to Nginx html directory (e.g. `/usr/share/nginx/html`).
+          2. Proxy `/api` and `/ws` path to the running backend service.
+          
+          ---
+          *Built automatically via GitHub Actions*
+          EOF
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create ${{ github.event.inputs.tag_name }} patient-monitor-frontend.zip \
+            --title "${{ github.event.inputs.release_title }}" \
+            --notes-file release-notes.md
